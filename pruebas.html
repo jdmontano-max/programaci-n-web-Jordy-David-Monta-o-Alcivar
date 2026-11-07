@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pruebas · funciones puras</title>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; color: #1f2733; }
+    h1 { font-family: Georgia, serif; font-size: 1.4rem; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #d9dde4; }
+    li.ok { background: #eaf3ee; border-color: #c4dccf; }
+    li.fallo { background: #f6ecec; border-color: #e0c4c4; }
+    small { display: block; color: #5f6b7a; }
+    #resumen { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Pruebas de funciones puras</h1>
+  <p id="resumen"></p>
+  <ul id="resultados"></ul>
+
+  <script type="module">
+    import { calcularTotales, porcentajeDescuento, costoEnvio, totalUnidades } from "./js/calculos.js";
+
+    const resultados = document.querySelector("#resultados");
+    const resumen = document.querySelector("#resumen");
+    let aprobadas = 0;
+    let total = 0;
+
+    // Los decimales no se comparan con ===: se acepta una diferencia mínima
+    const casiIgual = (a, b) => Math.abs(a - b) < 0.005;
+
+    function probar(nombre, esperado, obtenido, comparar = (a, b) => a === b) {
+      const paso = comparar(obtenido, esperado);
+      total++;
+      if (paso) aprobadas++;
+
+      const li = document.createElement("li");
+      li.className = paso ? "ok" : "fallo";
+      li.textContent = `${paso ? "✅" : "❌"} ${nombre}`;
+      const detalle = document.createElement("small");
+      detalle.textContent = `Esperado: ${esperado} · Obtenido: ${obtenido}`;
+      li.append(detalle);
+      resultados.append(li);
+    }
+
+    // Reto: teclado (id 2, $25) × 6 con envío a Cuenca = 166.75
+    // 150 − 5 % (7.50) + 2.50 de envío = 145.00; + 15 % de IVA = 166.75
+    const carritoTeclado = [{ id: 2, cantidad: 6 }];
+    probar(
+      "Teclado × 6 con envío a Cuenca da 166.75",
+      166.75,
+      calcularTotales(carritoTeclado, "cuenca").total,
+      casiIgual
+    );
+
+    // Pruebas complementarias
+    probar("6 unidades reciben 5 % de descuento", 0.05, porcentajeDescuento(6));
+    probar("10 unidades reciben 10 % de descuento", 0.10, porcentajeDescuento(10));
+    probar("Menos de 5 unidades no tienen descuento", 0, porcentajeDescuento(4));
+    probar("Envío a Cuenca cuesta 2.5", 2.5, costoEnvio("cuenca"));
+    probar("Retiro en el local no cuesta", 0, costoEnvio("retiro"));
+    probar("Carrito vacío no cobra envío", 0, calcularTotales([], "nacional").total, casiIgual);
+    probar("Cuenta las unidades de todos los productos", 5, totalUnidades([{ id: 1, cantidad: 2 }, { id: 2, cantidad: 3 }]));
+
+    resumen.textContent = `${aprobadas} de ${total} pruebas aprobadas`;
+  </script>
+</body>
+</html>
